@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context Graph System</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="//unpkg.com/force-graph"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <div class="left-panel">
+            <header>
+                <h1>Context Graph Explorer</h1>
+                <p>Visualize the ERP ecosystem interactively.</p>
+                <div class="controls">
+                    <button id="toggleGraphBtn">3D / 2D Graph</button>
+                    <button id="resetGraphBtn">Reset View</button>
+                </div>
+            </header>
+            <div id="graph-container"></div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="chat-header">
+                <h2>AI Data Query</h2>
+            </div>
+            <div class="chat-history" id="chat-history">
+                <div class="message system-message">
+                    👋 Welcome! Ask me anything about the ERP dataset. Example:
+                    <br><i>"Which products are associated with the highest number of billing documents?"</i>
+                </div>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div class="loading-indicator" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <span>Translating query to SQL & thinking...</span>
+            </div>
+
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Type your query here..." autocomplete="off">
+                <button id="send-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
