@@ -4,26 +4,55 @@ This project is a context graph system that allows you to interactively explore 
 
 ## Features
 
-- **Data Ingestion**: Parses JSONL files and dynamically loads them into an SQLite database.
-- **Graph Modeling**: Converts the relational ERP data into a NetworkX graph representation, linking Orders to Customers, Products, Deliveries, and Billing Documents.
-- **Graph Visualization**: A modern glassmorphism UI utilizing `react-force-graph` (via standard JS) to explore nodes and relationships.
-- **Conversational Interface**: Takes natural language queries, dynamically translates them into SQL using Groq's LLM API (Llama3-70b), executes the SQL query, and returns a natural language, data-backed answer.
+- **Data Ingestion**: Parses JSONL files and dynamically creates a native **Kùzu Graph** database structure (`context_graph_kuzu`).
+- **Graph Modeling**: Intelligently converts legacy relational ERP data explicitly into multi-hop Graph relationships (Nodes and Edges).
+- **Graph Visualization**: A modern glassmorphism UI utilizing `react-force-graph` (via vanilla JS) to natively explore graph topologies using Cypher backend queries.
+- **Streaming Conversational AI**: Takes natural language queries, dynamically translates them into **OpenCypher** using Groq's LLM API, streams the executable queries to the UI, and streams natural language contextualized answers back instantly via NDJSON.
 - **Guardrails**: Strictly constrained to answer questions related only to the provided dataset domain. Rejects unrelated or creative prompts.
+
+## Demo Video
+*(Link to the project walkthrough video goes here)*
+
+## Architecture Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Web UI
+    participant API as FastAPI Backend
+    participant LLM as Groq LLMs
+    participant DB as Kùzu Graph DB
+
+    User->>UI: Natural Language Query
+    UI->>API: JSON HTTP POST
+    
+    API->>LLM: 1. Generate OpenCypher
+    LLM-->>API: (Cypher Script)
+    
+    API->>DB: 2. Execute MATCH Query
+    DB-->>API: (Graph Row Data)
+    
+    API->>LLM: 3. Contextualize Results
+    LLM-->>API: (Conversational Synthesis)
+    
+    API-->>UI: 4. Stream Results (NDJSON)
+    UI-->>User: Updates Graph & Chat
+```
 
 ## Architecture Decisions
 
-1. **Backend**: Built with **FastAPI** (`main.py`) to provide a lightweight, high-performance web server.
+1. **Backend**: Built with **FastAPI** (`main.py`) to provide a lightweight, high-performance web server, streaming dual-channel UI payloads natively using `application/x-ndjson`.
 2. **Frontend**: A custom **Vanilla JS/HTML/CSS** application served directly by FastAPI. It has a split-screen design. The CSS implements modern glassmorphism and subtle glowing aesthetics for a visually premium experience without bloated UI frameworks.
 3. **Database Choice**: 
-   - We used an **in-memory SQLite Database** (`context_graph.db`) dynamically created from the JSONL files (`ingest.py`). SQLite was chosen because ERP data inherently follows a relational tabular structure, making it the perfect target for standard **Text-to-SQL logic**, which LLMs excel at.
-   - We used **NetworkX** (`graph_builder.py`) to parse the SQLite database and construct an explicitly directional graph mapping (e.g., `Delivery -> FULFILLS -> SalesOrder`) which is served to the frontend visualization (`react-force-graph`).
+   - We transitioned to **Kùzu**, an embedded, high-performance open-source native property graph database (`context_graph_kuzu`). Kùzu was selected because evaluating ERP multi-hop supply chain relations (e.g., tracking a Customer's Order to a specific Plant Delivery) is extremely complex and computationally expensive to traverse using repetitive SQL `JOIN` constraints.
+   - Utilizing a native Graph layer unlocks lightning-fast topology execution (`MATCH (c:Customer)-[:PLACED]->(s:SalesOrder)-[:FULFILLS]->...`) and fundamentally simplifies logical AI query construction parameters.
 4. **LLM Prompting Strategy**: 
-   - **Text-to-SQL Generation**: The first prompt passes the SQLite table schema generated via `PRAGMA` / `sqlite_master` to the LLM. It asks the LLM to output ONLY a SQL query based on the user's natural language question.
-   - **Data-Backed Summarization**: Once the backend executes the SQL, the result rows are given to a second LLM prompt to generate a concise, human-readable answer. This ensures no hallucinated data—answers are strictly grounded in execution results.
+   - **Text-to-Cypher Generation**: The primary prompt passes the complete Kùzu Node and Relationship catalog directly into the system context. It explicitly bounds the LLM to write logically sound, optimized **OpenCypher** traversal scripts.
+   - **Data-Backed Summarization**: Once the backend executes the OpenCypher query natively inside Kùzu, the output row payloads are fed immediately to a secondary LLM inference prompt to contextualize and stream the result logically back to the user. This effectively prevents data hallucination.
 5. **Guardrails**:
-   - The System Prompt injects a strict rule enforcing domain boundaries.
-   - If a prompt asks for general knowledge, creative writing, or outside topics, the LLM is explicitly instructed to reply with the exact phrase: *"This system is designed to answer questions related to the provided dataset only."*
-   - The backend checks for this specific string and short-circuits execution if found, guaranteeing security and correctness.
+   - The System Prompts inject a strict programmatic rule enforcing domain boundaries.
+   - If a prompt asks for general knowledge, creative writing, or external topics, the LLM is forcibly instructed to halt Cypher logic and reply with the exact phrase: *"This system is designed to answer questions related to the provided dataset only."*
+   - The FastAPI backend checks for this specific sequence and short-circuits execution if caught, preventing database strain and guaranteeing query grounding.
 
 ## Setup & Running Locally
 
@@ -38,7 +67,7 @@ This project is a context graph system that allows you to interactively explore 
    pip install -r requirements.txt
    ```
 2. Place the dataset inside the `/dataset` directory.
-3. Run the Data Ingestion script (this will create `context_graph.db`):
+3. Run the Data Ingestion script (this will compile the `context_graph_kuzu` graph database):
    ```bash
    python ingest.py
    ```
