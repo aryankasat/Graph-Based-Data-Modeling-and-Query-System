@@ -1,161 +1,111 @@
-import sqlite3
-import networkx as nx
+import kuzu
 
-DB_PATH = "context_graph.db"
-
-def build_graph():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    
-    G = nx.DiGraph()
-    
-    # 1. Customers
-    try:
-        cursor.execute("SELECT businessPartner, businessPartnerName FROM business_partners")
-        for row in cursor.fetchall():
-            G.add_node(f"Customer_{row['businessPartner']}", label="Customer", title=row['businessPartnerName'] or "Unknown Customer")
-    except Exception as e: print("Error customers", e)
-
-    # 2. Products
-    try:
-        cursor.execute("SELECT product FROM products")
-        for row in cursor.fetchall():
-            G.add_node(f"Product_{row['product']}", label="Product", title=f"Product {row['product']}")
-    except Exception as e: print("Error products", e)
-
-    # 3. Plants
-    try:
-        cursor.execute("SELECT plant, plantName FROM plants")
-        for row in cursor.fetchall():
-            G.add_node(f"Plant_{row['plant']}", label="Plant", title=row['plantName'] or f"Plant {row['plant']}")
-    except Exception as e: print("Error plants", e)
-
-    # 4. Sales Orders
-    try:
-        cursor.execute("SELECT salesOrder, soldToParty FROM sales_order_headers")
-        for row in cursor.fetchall():
-            so_id = f"SalesOrder_{row['salesOrder']}"
-            G.add_node(so_id, label="SalesOrder", title=f"SO {row['salesOrder']}")
-            if row['soldToParty']:
-                G.add_edge(f"Customer_{row['soldToParty']}", so_id, type="PLACED")
-    except Exception as e: print("Error SO headers", e)
-
-    try:
-        cursor.execute("SELECT salesOrder, material FROM sales_order_items")
-        for row in cursor.fetchall():
-            if row['material']:
-                G.add_edge(f"SalesOrder_{row['salesOrder']}", f"Product_{row['material']}", type="CONTAINS")
-    except Exception as e: print("Error SO items", e)
-
-    # 5. Outbound Deliveries
-    try:
-        cursor.execute("SELECT deliveryDocument, referenceSdDocument, plant FROM outbound_delivery_items")
-        for row in cursor.fetchall():
-            deliv_id = f"Delivery_{row['deliveryDocument']}"
-            if not G.has_node(deliv_id):
-                G.add_node(deliv_id, label="Delivery", title=f"Delivery {row['deliveryDocument']}")
-            
-            if row['referenceSdDocument']:
-                G.add_edge(deliv_id, f"SalesOrder_{row['referenceSdDocument']}", type="FULFILLS")
-            if row['plant']:
-                G.add_edge(deliv_id, f"Plant_{row['plant']}", type="SHIPS_FROM")
-    except Exception as e: print("Error Delivery", e)
-
-    # 6. Billing Documents
-    try:
-        cursor.execute("SELECT billingDocument, referenceSdDocument FROM billing_document_items")
-        for row in cursor.fetchall():
-            bill_id = f"Billing_{row['billingDocument']}"
-            if not G.has_node(bill_id):
-                G.add_node(bill_id, label="BillingDocument", title=f"Billing {row['billingDocument']}")
-            
-            ref = row['referenceSdDocument']
-            if ref:
-                # reference could be SO or Delivery
-                # Check which one it is (heuristically or link to both if we don't know, we'll try Delivery first)
-                G.add_edge(bill_id, f"Delivery_{ref}", type="BILLS")
-                G.add_edge(bill_id, f"SalesOrder_{ref}", type="BILLS")
-    except Exception as e: print("Error Billing", e)
-
-    # 7. Journal Entries
-    try:
-        cursor.execute("""
-            SELECT 
-                accountingDocument, customer, companyCode, fiscalYear, glAccount,
-                referenceDocument, costCenter, profitCenter, transactionCurrency,
-                amountInTransactionCurrency, companyCodeCurrency, amountInCompanyCodeCurrency,
-                postingDate, documentDate, accountingDocumentType, accountingDocumentItem
-            FROM journal_entry_items_accounts_receivable
-        """)
-        for row in cursor.fetchall():
-            je_id = f"JournalEntry_{row['accountingDocument']}"
-            if not G.has_node(je_id):
-                G.add_node(
-                    je_id, 
-                    label="JournalEntry", 
-                    title=f"JE {row['accountingDocument']}",
-                    CompanyCode=row['companyCode'],
-                    FiscalYear=row['fiscalYear'],
-                    AccountingDocument=row['accountingDocument'],
-                    GlAccount=row['glAccount'],
-                    ReferenceDocument=row['referenceDocument'],
-                    CostCenter=row['costCenter'],
-                    ProfitCenter=row['profitCenter'],
-                    TransactionCurrency=row['transactionCurrency'],
-                    AmountInTransactionCurrency=row['amountInTransactionCurrency'],
-                    CompanyCodeCurrency=row['companyCodeCurrency'],
-                    AmountInCompanyCodeCurrency=row['amountInCompanyCodeCurrency'],
-                    PostingDate=row['postingDate'],
-                    DocumentDate=row['documentDate'],
-                    AccountingDocumentType=row['accountingDocumentType'],
-                    AccountingDocumentItem=row['accountingDocumentItem']
-                )
-            if row['customer']:
-                G.add_edge(je_id, f"Customer_{row['customer']}", type="ACCOUNTS_FOR")
-    except Exception as e: print("Error Journal", e)
-
-    # 8. Payments
-    try:
-        cursor.execute("SELECT clearingAccountingDocument, accountingDocument FROM payments_accounts_receivable")
-        for row in cursor.fetchall():
-            pay_id = f"Payment_{row['clearingAccountingDocument']}"
-            if not G.has_node(pay_id):
-                G.add_node(pay_id, label="Payment", title=f"Payment {row['clearingAccountingDocument']}")
-            if row['accountingDocument']:
-                G.add_edge(pay_id, f"JournalEntry_{row['accountingDocument']}", type="CLEARS")
-    except Exception as e: print("Error Payment", e)
-    
-    conn.close()
-    return G
+DB_PATH = "context_graph_kuzu"
 
 def get_graph_json():
-    G = build_graph()
+    db = kuzu.Database(DB_PATH)
+    conn = kuzu.Connection(db)
     
-    # We only want to return nodes and links that are somewhat connected or real.
-    # Due to some heuristic linking (like Billing -> Delivery OR SalesOrder), some dangling nodes might exist.
-    nodes = []
-    for node, data in G.nodes(data=True):
-        node_data = {"id": node}
-        node_data.update(data)
-        # Ensure label and title have fallbacks if missing
-        if "label" not in node_data:
-            node_data["label"] = "Unknown"
-        if "title" not in node_data:
-            node_data["title"] = node
-        nodes.append(node_data)
-        
+    nodes_dict = {}
     links = []
-    for source, target, data in G.edges(data=True):
-        # only add link if both source and target exist in nodes
-        if G.has_node(source) and G.has_node(target):
-            links.append({
-                "source": source,
-                "target": target,
-                "label": data.get("type", "")
-            })
-            
-    return {"nodes": nodes, "links": links}
+
+    def add_node(nid, label, title, extras=None):
+        if nid not in nodes_dict:
+            node_data = {"id": nid, "label": label, "title": title}
+            if extras:
+                node_data.update(extras)
+            nodes_dict[nid] = node_data
+
+    # Customers
+    res = conn.execute("MATCH (n:business_partners) RETURN n.businessPartner, n.businessPartnerName")
+    while res.has_next():
+        row = res.get_next()
+        add_node(f"Customer_{row[0]}", "Customer", row[1] or "Unknown Customer")
+        
+    # Products
+    res = conn.execute("MATCH (n:products) RETURN n.product")
+    while res.has_next():
+        row = res.get_next()
+        add_node(f"Product_{row[0]}", "Product", f"Product {row[0]}")
+
+    # Plants
+    res = conn.execute("MATCH (n:plants) RETURN n.plant, n.plantName")
+    while res.has_next():
+        row = res.get_next()
+        add_node(f"Plant_{row[0]}", "Plant", row[1] or f"Plant {row[0]}")
+        
+    # SalesOrders
+    res = conn.execute("MATCH (n:sales_order_headers) RETURN n.salesOrder")
+    while res.has_next():
+        row = res.get_next()
+        add_node(f"SalesOrder_{row[0]}", "SalesOrder", f"SO {row[0]}")
+        
+    # Deliveries
+    res = conn.execute("MATCH (n:outbound_delivery_items) RETURN n.deliveryDocument")
+    while res.has_next():
+        row = res.get_next()
+        add_node(f"Delivery_{row[0]}", "Delivery", f"Delivery {row[0]}")
+
+    # BillingDocuments
+    res = conn.execute("MATCH (n:billing_document_items) RETURN n.billingDocument")
+    while res.has_next():
+        row = res.get_next()
+        add_node(f"BillingDocument_{row[0]}", "BillingDocument", f"Billing {row[0]}")
+
+    # JournalEntries
+    res = conn.execute("""
+        MATCH (n:journal_entry_items_accounts_receivable) 
+        RETURN n.accountingDocument, n.companyCode, n.fiscalYear, n.glAccount, n.referenceDocument, 
+               n.costCenter, n.profitCenter, n.transactionCurrency, n.amountInTransactionCurrency, 
+               n.companyCodeCurrency, n.amountInCompanyCodeCurrency, n.postingDate, n.documentDate, 
+               n.accountingDocumentType, n.accountingDocumentItem
+    """)
+    while res.has_next():
+        row = res.get_next()
+        extras = {
+            "CompanyCode": row[1], "FiscalYear": row[2], "AccountingDocument": row[0],
+            "GlAccount": row[3], "ReferenceDocument": row[4], "CostCenter": row[5],
+            "ProfitCenter": row[6], "TransactionCurrency": row[7], "AmountInTransactionCurrency": row[8],
+            "CompanyCodeCurrency": row[9], "AmountInCompanyCodeCurrency": row[10], "PostingDate": row[11],
+            "DocumentDate": row[12], "AccountingDocumentType": row[13], "AccountingDocumentItem": row[14]
+        }
+        add_node(f"JournalEntry_{row[0]}", "JournalEntry", f"JE {row[0]}", extras)
+
+    # Payments
+    res = conn.execute("MATCH (n:payments_accounts_receivable) RETURN n.clearingAccountingDocument")
+    while res.has_next():
+        row = res.get_next()
+        add_node(f"Payment_{row[0]}", "Payment", f"Payment {row[0]}")
+
+    # Relationships
+    rel_queries = [
+        ("MATCH (a:business_partners)-[:PLACED]->(b:sales_order_headers) RETURN a.businessPartner, b.salesOrder", "Customer", "SalesOrder", "PLACED"),
+        ("MATCH (so:sales_order_headers)-[:CONTAINS]->(p:products) RETURN so.salesOrder, p.product", "SalesOrder", "Product", "CONTAINS"),
+        ("MATCH (d:outbound_delivery_items)-[:FULFILLS]->(so:sales_order_headers) RETURN d.deliveryDocument, so.salesOrder", "Delivery", "SalesOrder", "FULFILLS"),
+        ("MATCH (d:outbound_delivery_items)-[:SHIPS_FROM]->(p:plants) RETURN d.deliveryDocument, p.plant", "Delivery", "Plant", "SHIPS_FROM"),
+        ("MATCH (b:billing_document_items)-[:BILLS_DELIVERY]->(d:outbound_delivery_items) RETURN b.billingDocument, d.deliveryDocument", "BillingDocument", "Delivery", "BILLS"),
+        ("MATCH (b:billing_document_items)-[:BILLS_ORDER]->(so:sales_order_headers) RETURN b.billingDocument, so.salesOrder", "BillingDocument", "SalesOrder", "BILLS"),
+        ("MATCH (j:journal_entry_items_accounts_receivable)-[:ACCOUNTS_FOR]->(c:business_partners) RETURN j.accountingDocument, c.businessPartner", "JournalEntry", "Customer", "ACCOUNTS_FOR"),
+        ("MATCH (p:payments_accounts_receivable)-[:CLEARS]->(j:journal_entry_items_accounts_receivable) RETURN p.clearingAccountingDocument, j.accountingDocument", "Payment", "JournalEntry", "CLEARS")
+    ]
+    
+    for q, source_type, target_type, rel_name in rel_queries:
+        try:
+            res = conn.execute(q)
+            while res.has_next():
+                row = res.get_next()
+                source_id = f"{source_type}_{row[0]}"
+                target_id = f"{target_type}_{row[1]}"
+                if source_id in nodes_dict and target_id in nodes_dict:
+                    links.append({
+                        "source": source_id,
+                        "target": target_id,
+                        "label": rel_name
+                    })
+        except Exception as e:
+            pass
+
+    return {"nodes": list(nodes_dict.values()), "links": links}
 
 if __name__ == "__main__":
     data = get_graph_json()

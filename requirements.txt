@@ -4,3 +4,4 @@ networkx
 groq
 python-dotenv
 pydantic
+kuzu

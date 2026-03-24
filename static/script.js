@@ -233,6 +233,55 @@ document.addEventListener('DOMContentLoaded', () => {
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
 
+    function addStreamingMessage() {
+        const wrapper = document.createElement('div');
+        wrapper.className = `message-wrapper system`;
+        
+        let avatarHTML = `<div class="avatar-container"><div class="system-avatar">D</div></div>`;
+        let senderHTML = `<div class="message-sender"><strong>Dodge AI</strong><br><span>Graph Agent</span></div>`;
+
+        wrapper.innerHTML = `
+            ${avatarHTML}
+            <div class="message-content-wrapper">
+                ${senderHTML}
+                <div class="message system-message">
+                    <div class="msg-text"></div>
+                    <div class="msg-data"></div>
+                    <div class="msg-sql"></div>
+                </div>
+            </div>
+        `;
+
+        chatHistory.appendChild(wrapper);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        const textEl = wrapper.querySelector('.msg-text');
+        const dataEl = wrapper.querySelector('.msg-data');
+        const sqlEl = wrapper.querySelector('.msg-sql');
+        
+        return {
+            updateText: (text) => {
+                textEl.innerHTML = text.replace(/\n/g, '<br>');
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            },
+            updateMetadata: (sqlQuery, sqlData) => {
+                if (sqlData && sqlData.length > 0) {
+                    const keys = Object.keys(sqlData[0]);
+                    let tableHeaders = keys.map(k => `<th>${k}</th>`).join('');
+                    let tableRows = sqlData.map(row => {
+                        return '<tr>' + keys.map(k => `<td>${row[k] !== null ? row[k] : ''}</td>`).join('') + '</tr>';
+                    }).join('');
+                    dataEl.innerHTML = `<div class="sql-data-container"><table class="sql-data-table"><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
+                }
+                if (sqlQuery) {
+                    let typeLabel = sqlQuery.toUpperCase().includes('MATCH') ? 'Cypher' : 'SQL';
+                    sqlEl.innerHTML = `<div class="sql-debug">Executed ${typeLabel}:\n${sqlQuery}</div>`;
+                }
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        };
+    }
+
     async function handleSend() {
         const query = chatInput.value.trim();
         if (!query) return;
@@ -251,14 +300,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query })
             });
-            const data = await response.json();
             
-            if (response.ok) {
-                updateHighlight(data.data);
-                addMessage(data.response, false, 'system', data.sql_query, data.data);
-            } else {
+            if (!response.ok) {
+                const data = await response.json();
                 addMessage(`Server Error: ${data.detail}`, false, 'error');
+                return;
             }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            let streamedText = '';
+            const msgObj = addStreamingMessage();
+            let buffer = '';
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                
+                buffer = lines.pop(); // keep the last (potentially incomplete) element in the buffer
+                
+                for (const line of lines) {
+                    if (line.trim() === '') continue;
+                    try {
+                        const parsed = JSON.parse(line);
+                        if (parsed.type === 'metadata') {
+                            if (parsed.data) {
+                                updateHighlight(parsed.data);
+                            }
+                            msgObj.updateMetadata(parsed.sql_query, parsed.data);
+                        } else if (parsed.type === 'chunk') {
+                            streamedText += parsed.content;
+                            msgObj.updateText(streamedText);
+                        }
+                    } catch (e) {
+                        console.error("Error parsing stream chunk", e, line);
+                    }
+                }
+            }
+            
+            if (buffer.trim() !== '') {
+                try {
+                    const parsed = JSON.parse(buffer);
+                    if (parsed.type === 'chunk') {
+                        streamedText += parsed.content;
+                        msgObj.updateText(streamedText);
+                    }
+                } catch (e) {}
+            }
+            
         } catch (error) {
             addMessage(`Failed to connect to server: ${error.message}`, false, 'error');
         } finally {
