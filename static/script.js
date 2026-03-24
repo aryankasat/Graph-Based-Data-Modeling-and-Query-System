@@ -64,13 +64,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (node) {
                         // Show Custom Tooltip
                         tooltip.style.display = 'block';
+
+                        let detailsHtml = '';
+                        const skipKeys = ['id', 'label', 'title', 'x', 'y', 'vx', 'vy', 'index', 'color', 'fx', 'fy'];
+                        for (const [key, value] of Object.entries(node)) {
+                            if (!skipKeys.includes(key) && value !== null) {
+                                detailsHtml += `<div class="tooltip-row"><span>${key}:</span><span class="val">${value}</span></div>`;
+                            }
+                        }
+
+                        let idTitleHtml = '';
+                        if (detailsHtml === '') {
+                             idTitleHtml = `
+                                <div class="tooltip-row"><span>ID:</span><span class="val">${node.id.split('_')[1] || node.id}</span></div>
+                                <div class="tooltip-row"><span>Title:</span><span class="val">${node.title}</span></div>
+                             `;
+                        }
+                        
+                        const displayLabel = node.label === 'JournalEntry' ? 'Journal Entry' : node.label;
                         
                         // Populate tooltip cleanly
                         tooltip.innerHTML = `
-                            <h3>${node.label}</h3>
-                            <div class="tooltip-row"><span>Entity:</span><span class="val">${node.label}</span></div>
-                            <div class="tooltip-row"><span>ID:</span><span class="val">${node.id.split('_')[1] || node.id}</span></div>
-                            <div class="tooltip-row"><span>Title:</span><span class="val">${node.title}</span></div>
+                            <h3>${displayLabel}</h3>
+                            <div class="tooltip-row"><span>Entity:</span><span class="val">${displayLabel}</span></div>
+                            ${idTitleHtml}
+                            ${detailsHtml}
                             <div class="tooltip-footer">
                                 Connections: ${graphData.links.filter(l => l.source.id === node.id || l.target.id === node.id).length}
                             </div>

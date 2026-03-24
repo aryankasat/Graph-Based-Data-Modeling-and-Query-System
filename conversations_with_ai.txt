@@ -1,0 +1,21 @@
+User Query - Enhance the graph to show more details about the nodes and edges.
+
+AI response - Implementing the proposed enhancements to the graph builder to include detailed properties for nodes and display them dynamically in the UI tooltip.
+
+Edited graph_builder.py
+Edited graph_builder.py
+Edited script.js
+
+Modified [graph_builder.py](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/graph_builder.py:0:0-0:0) and [script.js](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/static/script.js:0:0-0:0) to dynamically generate and display Journal Entry properties. Entering verification phase.
+
+Edited task.md
+Ran command: `python main.py`
+Viewed main.py:1-176
+Ran command: `venv/bin/python main.py`
+
+Started local server. Checking the front-end to ensure tooltip matches the design constraint.
+
+Browser task: "Check Tooltip on Graph"
+
+
+User Query - Upgrade the Guardrails to a model based guardrails such as meta llama guard.

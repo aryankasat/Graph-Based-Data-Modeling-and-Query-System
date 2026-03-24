@@ -80,11 +80,37 @@ def build_graph():
 
     # 7. Journal Entries
     try:
-        cursor.execute("SELECT accountingDocument, customer FROM journal_entry_items_accounts_receivable")
+        cursor.execute("""
+            SELECT 
+                accountingDocument, customer, companyCode, fiscalYear, glAccount,
+                referenceDocument, costCenter, profitCenter, transactionCurrency,
+                amountInTransactionCurrency, companyCodeCurrency, amountInCompanyCodeCurrency,
+                postingDate, documentDate, accountingDocumentType, accountingDocumentItem
+            FROM journal_entry_items_accounts_receivable
+        """)
         for row in cursor.fetchall():
             je_id = f"JournalEntry_{row['accountingDocument']}"
             if not G.has_node(je_id):
-                G.add_node(je_id, label="JournalEntry", title=f"JE {row['accountingDocument']}")
+                G.add_node(
+                    je_id, 
+                    label="JournalEntry", 
+                    title=f"JE {row['accountingDocument']}",
+                    CompanyCode=row['companyCode'],
+                    FiscalYear=row['fiscalYear'],
+                    AccountingDocument=row['accountingDocument'],
+                    GlAccount=row['glAccount'],
+                    ReferenceDocument=row['referenceDocument'],
+                    CostCenter=row['costCenter'],
+                    ProfitCenter=row['profitCenter'],
+                    TransactionCurrency=row['transactionCurrency'],
+                    AmountInTransactionCurrency=row['amountInTransactionCurrency'],
+                    CompanyCodeCurrency=row['companyCodeCurrency'],
+                    AmountInCompanyCodeCurrency=row['amountInCompanyCodeCurrency'],
+                    PostingDate=row['postingDate'],
+                    DocumentDate=row['documentDate'],
+                    AccountingDocumentType=row['accountingDocumentType'],
+                    AccountingDocumentItem=row['accountingDocumentItem']
+                )
             if row['customer']:
                 G.add_edge(je_id, f"Customer_{row['customer']}", type="ACCOUNTS_FOR")
     except Exception as e: print("Error Journal", e)
@@ -110,11 +136,14 @@ def get_graph_json():
     # Due to some heuristic linking (like Billing -> Delivery OR SalesOrder), some dangling nodes might exist.
     nodes = []
     for node, data in G.nodes(data=True):
-        nodes.append({
-            "id": node,
-            "label": data.get("label", "Unknown"),
-            "title": data.get("title", node)
-        })
+        node_data = {"id": node}
+        node_data.update(data)
+        # Ensure label and title have fallbacks if missing
+        if "label" not in node_data:
+            node_data["label"] = "Unknown"
+        if "title" not in node_data:
+            node_data["title"] = node
+        nodes.append(node_data)
         
     links = []
     for source, target, data in G.edges(data=True):
