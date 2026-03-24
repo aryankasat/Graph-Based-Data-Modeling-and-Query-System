@@ -15,29 +15,7 @@ This project is a context graph system that allows you to interactively explore 
 
 ## Architecture Diagram
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant UI as Web UI
-    participant API as FastAPI Backend
-    participant LLM as Groq LLMs
-    participant DB as Kùzu Graph DB
-
-    User->>UI: Natural Language Query
-    UI->>API: JSON HTTP POST
-    
-    API->>LLM: 1. Generate OpenCypher
-    LLM-->>API: (Cypher Script)
-    
-    API->>DB: 2. Execute MATCH Query
-    DB-->>API: (Graph Row Data)
-    
-    API->>LLM: 3. Contextualize Results
-    LLM-->>API: (Conversational Synthesis)
-    
-    API-->>UI: 4. Stream Results (NDJSON)
-    UI-->>User: Updates Graph & Chat
-```
+![Screenshot](assets/architecture.png)
 
 ## Architecture Decisions
 
