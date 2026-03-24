@@ -2,6 +2,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Graph Visualization ----
     let graph;
     let graphData = { nodes: [], links: [] };
+    let highlightNodes = new Set();
+
+    function updateHighlight(data) {
+        highlightNodes.clear();
+        if (!data || data.length === 0) {
+            if (graph) graph.nodeRelSize(4); // trigger redraw
+            return;
+        }
+
+        const valuesToMatch = new Set();
+        data.forEach(row => {
+            Object.values(row).forEach(val => {
+                if (val !== null && val !== undefined && val !== '') {
+                    valuesToMatch.add(String(val).toLowerCase());
+                }
+            });
+        });
+
+        graphData.nodes.forEach(node => {
+            const parts = node.id.split('_');
+            const idVal = parts.length > 1 ? parts.slice(1).join('_').toLowerCase() : node.id.toLowerCase();
+            if (valuesToMatch.has(idVal)) {
+                highlightNodes.add(node.id);
+            }
+        });
+        
+        if (graph) graph.nodeRelSize(4); // trigger redraw
+    }
     const container = document.getElementById('graph-container');
     const tooltip = document.getElementById('graph-tooltip');
     
@@ -26,39 +54,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 .height(container.clientHeight)
                 .graphData(data)
                 .nodeRelSize(4)
-                .nodeColor(node => colorMap[node.label] || '#9ca3af')
+                .nodeColor(node => {
+                    if (highlightNodes.size > 0) {
+                        return highlightNodes.has(node.id) ? '#10b981' : '#f3f4f6';
+                    }
+                    return colorMap[node.label] || '#9ca3af';
+                })
                 .nodeCanvasObject((node, ctx, globalScale) => {
                     const label = node.label;
                     const size = ['Customer', 'SalesOrder', 'JournalEntry'].includes(label) ? 6 : 3;
                     
+                    const isHighlighted = highlightNodes.size > 0 && highlightNodes.has(node.id);
+                    const isFaded = highlightNodes.size > 0 && !highlightNodes.has(node.id);
+
+                    // Fade unhighlighted nodes using transparency rather than removing their colors
+                    ctx.globalAlpha = isFaded ? 0.15 : 1.0;
+
                     ctx.beginPath();
                     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
                     
-                    // Draw node styling depending on type (some filled, some hollow)
-                    if (['Product', 'Plant'].includes(label)) {
-                        ctx.fillStyle = '#fff';
-                        ctx.fill();
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeStyle = '#ef4444'; // Red outline
-                        ctx.stroke();
-                    } else {
-                        ctx.fillStyle = '#fff';
-                        ctx.fill();
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeStyle = '#3b82f6'; // Blue outline
-                        ctx.stroke();
-                        
-                        // If it's a main node, fill it or add inner dot
-                        if (size === 6) {
-                            ctx.beginPath();
-                            ctx.arc(node.x, node.y, 2, 0, 2 * Math.PI, false);
-                            ctx.fillStyle = '#3b82f6';
-                            ctx.fill();
-                        }
+                    let strokeColor = '#3b82f6';
+                    if (['Product', 'Plant'].includes(label)) strokeColor = '#ef4444';
+                    
+                    if (isHighlighted) {
+                        strokeColor = '#10b981';
                     }
+
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                    ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
+                    ctx.strokeStyle = strokeColor;
+                    ctx.stroke();
+                    
+                    if (size === 6 && !(['Product', 'Plant'].includes(label))) {
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, 2, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = strokeColor;
+                        ctx.fill();
+                    }
+
+                    // Reset alpha so it doesn't affect other canvas drawing
+                    ctx.globalAlpha = 1.0;
                 })
-                .linkColor(() => '#bde0fe') // Light blue links
-                .linkWidth(0.5)
+                .linkColor(link => {
+                    if (highlightNodes.size > 0) {
+                        const sourceHighlight = highlightNodes.has(link.source.id || link.source);
+                        const targetHighlight = highlightNodes.has(link.target.id || link.target);
+                        if (sourceHighlight && targetHighlight) return '#10b981';
+                        return '#f3f4f6';
+                    }
+                    return '#bde0fe';
+                }) // Light blue links
+                .linkWidth(link => {
+                    if (highlightNodes.size > 0) {
+                        const sourceHighlight = highlightNodes.has(link.source.id || link.source);
+                        const targetHighlight = highlightNodes.has(link.target.id || link.target);
+                        if (sourceHighlight && targetHighlight) return 1.5;
+                        return 0.5;
+                    }
+                    return 0.5;
+                })
                 .onNodeHover(node => {
                     container.style.cursor = node ? 'pointer' : null;
                     if (node) {
@@ -73,13 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
 
-                        let idTitleHtml = '';
-                        if (detailsHtml === '') {
-                             idTitleHtml = `
-                                <div class="tooltip-row"><span>ID:</span><span class="val">${node.id.split('_')[1] || node.id}</span></div>
-                                <div class="tooltip-row"><span>Title:</span><span class="val">${node.title}</span></div>
-                             `;
-                        }
+                        let idTitleHtml = `
+                            <div class="tooltip-row"><span>ID:</span><span class="val">${node.id.split('_')[1] || node.id}</span></div>
+                            <div class="tooltip-row"><span>Title:</span><span class="val">${node.title}</span></div>
+                        `;
                         
                         const displayLabel = node.label === 'JournalEntry' ? 'Journal Entry' : node.label;
                         
@@ -138,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function addMessage(text, isUser = false, type = 'system', sqlQuery = null) {
+    function addMessage(text, isUser = false, type = 'system', sqlQuery = null, sqlData = null) {
         const wrapper = document.createElement('div');
         wrapper.className = `message-wrapper ${isUser ? 'user' : 'system'}`;
         
@@ -154,6 +206,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let formattedText = text.replace(/\n/g, '<br>');
         let sqlHTML = sqlQuery ? `<div class="sql-debug">Executed SQL:\n${sqlQuery}</div>` : '';
+        
+        let dataHTML = '';
+        if (sqlData && sqlData.length > 0) {
+            const keys = Object.keys(sqlData[0]);
+            let tableHeaders = keys.map(k => `<th>${k}</th>`).join('');
+            let tableRows = sqlData.map(row => {
+                return '<tr>' + keys.map(k => `<td>${row[k] !== null ? row[k] : ''}</td>`).join('') + '</tr>';
+            }).join('');
+            dataHTML = `<div class="sql-data-container"><table class="sql-data-table"><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
+        }
 
         wrapper.innerHTML = `
             ${avatarHTML}
@@ -161,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${senderHTML}
                 <div class="message ${contentClass}">
                     ${formattedText}
+                    ${dataHTML}
                     ${sqlHTML}
                 </div>
             </div>
@@ -191,7 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (response.ok) {
-                addMessage(data.response, false, 'system', data.sql_query);
+                updateHighlight(data.data);
+                addMessage(data.response, false, 'system', data.sql_query, data.data);
             } else {
                 addMessage(`Server Error: ${data.detail}`, false, 'error');
             }

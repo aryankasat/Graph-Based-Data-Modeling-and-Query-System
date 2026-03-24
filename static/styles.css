@@ -281,6 +281,39 @@ body {
     word-break: break-all;
 }
 
+.sql-data-container {
+    margin-top: 12px;
+    margin-bottom: 8px;
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: #fff;
+}
+
+.sql-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+}
+
+.sql-data-table th, .sql-data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sql-data-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.sql-data-table tr:last-child td {
+    border-bottom: none;
+}
+
+
 /* Chat Input */
 .chat-input-wrapper {
     padding: 16px 24px 24px;

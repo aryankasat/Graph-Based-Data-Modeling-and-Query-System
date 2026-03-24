@@ -47,4 +47,55 @@ AI Response - Edited main.py
 
 I have successfully removed the `llama-3.1-8b-instant` guardrails check from the `/api/chat` endpoint in [main.py](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/main.py:0:0-0:0) as requested. The application will now directly process user queries for SQL generation without the pre-processing safety layer. Let me know if you need any other changes!
 
-User Query - 
+User Query - The UI is not showing the results outputed after running the sql query. If possible highlight the nodes which were retrieved from the executed sql query.
+
+AI Response - Listed directory Graph-Based-Data-Modeling-and-Query-System
+Viewed script.js:1-215
+Viewed main.py:1-176
+Viewed graph_builder.py:1-163
+Viewed index.html:1-77
+
+Started working on the task to show SQL query results in the UI and to highlight retrieved nodes in the graph based on those results.
+
+Created task.md
+Viewed styles.css:1-360
+
+Started working on the task to show SQL query results in the UI and to highlight retrieved nodes in the graph based on those results.
+
+Edited script.js
+Edited styles.css
+
+Updated script.js to render data tables and highlight nodes, and added corresponding CSS styles.
+
+Edited task.md
+
+I have updated the application to display the SQL query results directly in the UI and also added logic to highlight the retrieved nodes within the graph!
+
+Here is a summary of the changes:
+1. **Chat UI Update**: Modified `script.js` to render an HTML table containing the SQL output whenever a query execution returns row data.
+2. **Graph Highlighting**: Created an `updateHighlight` function in `script.js` that checks if the node IDs correspond directly to the values fetched by SQL, to highlight those nodes by rendering them with a thick green accent (`#10b981`). Other unhighlighted nodes will be slightly faded to ensure the matching data stands out. 
+3. **Styling Update**: Added the CSS class `.sql-data-container` and its corresponding selectors to `styles.css` to present the table in a neat, scrollable, modern format.
+
+You can run the FastAPI application again to test the implementation! Let me know if you would like me to adjust the styling or how the nodes are highlighted.
+
+Ran command: `source venv/bin/activate`
+
+User Query - The rest of the details about the node have gone. Please fix that.
+
+AI-Response - Viewed script.js:1-278
+Edited script.js
+Edited script.js
+
+I have fixed the issue! 
+
+It seems the highlighted nodes caused the other (unhighlighted) nodes to lose their specific details (like their respective base colors, outlines, and inner dots) because they were being forcefully overwritten to flat grey/white. Additionally, I noticed that certain nodes with an expansive list of properties skipped showing their `ID` and `Title` altogether in the tooltip!
+
+I have updated the code to:
+1. Preserve all the visual intricacies (like color-coding distinguishing products, journal entries vs customers) by applying `globalAlpha` (transparency) to the unhighlighted nodes, rather than wiping out their colors completely. Faded nodes will now just be neatly dimmed.
+2. Ensure that the **ID** and **Title** of every single node will always persist inside the hover-tooltip regardless of how many other extensive properties are shown.
+
+You should be able to see the full details of all nodes on your application now! Let me know if everything looks good or if there are any further tweaks you need!
+
+User Query - Can we add "Streaming responses from the LLM" in the workflow?
+
+AI Response - 
