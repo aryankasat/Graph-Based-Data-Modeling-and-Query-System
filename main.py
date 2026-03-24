@@ -128,7 +128,7 @@ def chat_endpoint(request: ChatRequest):
     
     try:
         completion = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="gpt-oss-120b",
             messages=[
                 {"role": "system", "content": get_cypher_prompt()},
                 {"role": "user", "content": user_query}
@@ -186,7 +186,7 @@ Using this data, provide a clear, natural language answer to the user's question
         yield json.dumps({"type": "metadata", "cypher_query": cypher_query, "data": rows[:10]}, default=str) + "\n"
         try:
             stream = groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="gpt-oss-120b",
                 messages=[
                     {"role": "system", "content": "You are a helpful data analyst. Analyze the data and answer concisely."},
                     {"role": "user", "content": ANSWER_PROMPT}
