@@ -99,6 +99,21 @@ def chat_endpoint(request: ChatRequest):
     
     user_query = request.query
     
+    # 0. Llama Guard safety check
+    try:
+        guard_completion = groq_client.chat.completions.create(
+            model="llama-guard-3-8b",
+            messages=[
+                {"role": "user", "content": user_query}
+            ],
+            temperature=0.0
+        )
+        guard_response = guard_completion.choices[0].message.content.strip().lower()
+        if guard_response.startswith("unsafe"):
+            return ChatResponse(response="Your query was blocked by safety guardrails.")
+    except Exception as e:
+        print(f"Guardrail failed or timeout: {e}; proceeding with query.")
+        
     # 1. Ask LLM to generate SQL or reject
     try:
         completion = groq_client.chat.completions.create(
