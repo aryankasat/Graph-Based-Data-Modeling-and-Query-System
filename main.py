@@ -162,7 +162,7 @@ def chat_endpoint(request: ChatRequest):
     except Exception as e:
         error_msg = str(e)
         def stream_error():
-            yield json.dumps({"type": "metadata", "sql_query": cypher_query}) + "\n"
+            yield json.dumps({"type": "metadata", "cypher_query": cypher_query}) + "\n"
             yield json.dumps({"type": "chunk", "content": f"I tried to run a graph query to answer your question, but encountered an error.\nCypher: {cypher_query}\nError: {error_msg}"}) + "\n"
         return StreamingResponse(stream_error(), media_type="application/x-ndjson")
     
@@ -183,7 +183,7 @@ Using this data, provide a clear, natural language answer to the user's question
 
     def generate_response():
         # Ensure we sanitize datetime objects internally handled by kuzu just in case
-        yield json.dumps({"type": "metadata", "sql_query": cypher_query, "data": rows[:10]}, default=str) + "\n"
+        yield json.dumps({"type": "metadata", "cypher_query": cypher_query, "data": rows[:10]}, default=str) + "\n"
         try:
             stream = groq_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",

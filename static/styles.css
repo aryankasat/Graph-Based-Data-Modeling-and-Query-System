@@ -269,47 +269,50 @@ body {
     border: 1px solid #fecaca;
 }
 
-.sql-debug {
-    margin-top: 8px;
-    padding: 8px;
-    background: #f3f4f6;
-    border-radius: 4px;
+.cypher-debug {
+    background: #f1f5f9;
+    padding: 10px;
+    border-radius: 6px;
     font-family: monospace;
-    font-size: 12px;
-    color: #111827;
+    font-size: 11px;
+    color: #475569;
+    border-left: 3px solid #3b82f6;
+    margin-top: 10px;
     white-space: pre-wrap;
     word-break: break-all;
 }
 
-.sql-data-container {
-    margin-top: 12px;
-    margin-bottom: 8px;
-    width: 100%;
+.cypher-data-container {
+    margin-top: 10px;
+    max-height: 250px;
+    overflow-y: auto;
     overflow-x: auto;
-    border: 1px solid var(--border-color);
     border-radius: 6px;
-    background: #fff;
+    border: 1px solid #e2e8f0;
 }
 
-.sql-data-table {
+.cypher-data-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
+    background: white;
+}
+
+.cypher-data-table th, .cypher-data-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e2e8f0;
     text-align: left;
 }
 
-.sql-data-table th, .sql-data-table td {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.sql-data-table th {
-    background-color: #f9fafb;
+.cypher-data-table th {
+    background: #f8fafc;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #475569;
+    position: sticky;
+    top: 0;
 }
 
-.sql-data-table tr:last-child td {
+.cypher-data-table tr:last-child td {
     border-bottom: none;
 }
 

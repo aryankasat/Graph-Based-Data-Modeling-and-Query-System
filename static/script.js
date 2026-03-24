@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function addMessage(text, isUser = false, type = 'system', sqlQuery = null, sqlData = null) {
+    function addMessage(text, isUser = false, type = 'system', cypherQuery = null, cypherData = null) {
         const wrapper = document.createElement('div');
         wrapper.className = `message-wrapper ${isUser ? 'user' : 'system'}`;
         
@@ -205,16 +205,16 @@ document.addEventListener('DOMContentLoaded', () => {
         let contentClass = isUser ? 'user-message' : (type === 'error' ? 'error-message' : 'system-message');
         
         let formattedText = text.replace(/\n/g, '<br>');
-        let sqlHTML = sqlQuery ? `<div class="sql-debug">Executed SQL:\n${sqlQuery}</div>` : '';
+        let cypherHTML = cypherQuery ? `<div class="cypher-debug">Executed Cypher:\n${cypherQuery}</div>` : '';
         
         let dataHTML = '';
-        if (sqlData && sqlData.length > 0) {
-            const keys = Object.keys(sqlData[0]);
+        if (cypherData && cypherData.length > 0) {
+            const keys = Object.keys(cypherData[0]);
             let tableHeaders = keys.map(k => `<th>${k}</th>`).join('');
-            let tableRows = sqlData.map(row => {
+            let tableRows = cypherData.map(row => {
                 return '<tr>' + keys.map(k => `<td>${row[k] !== null ? row[k] : ''}</td>`).join('') + '</tr>';
             }).join('');
-            dataHTML = `<div class="sql-data-container"><table class="sql-data-table"><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
+            dataHTML = `<div class="cypher-data-container"><table class="cypher-data-table"><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
         }
 
         wrapper.innerHTML = `
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="message ${contentClass}">
                     ${formattedText}
                     ${dataHTML}
-                    ${sqlHTML}
+                    ${cypherHTML}
                 </div>
             </div>
         `;
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="message system-message">
                     <div class="msg-text"></div>
                     <div class="msg-data"></div>
-                    <div class="msg-sql"></div>
+                    <div class="msg-cypher"></div>
                 </div>
             </div>
         `;
@@ -257,25 +257,24 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const textEl = wrapper.querySelector('.msg-text');
         const dataEl = wrapper.querySelector('.msg-data');
-        const sqlEl = wrapper.querySelector('.msg-sql');
+        const cypherEl = wrapper.querySelector('.msg-cypher');
         
         return {
             updateText: (text) => {
                 textEl.innerHTML = text.replace(/\n/g, '<br>');
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             },
-            updateMetadata: (sqlQuery, sqlData) => {
-                if (sqlData && sqlData.length > 0) {
-                    const keys = Object.keys(sqlData[0]);
+            updateMetadata: (cypherQuery, cypherData) => {
+                if (cypherData && cypherData.length > 0) {
+                    const keys = Object.keys(cypherData[0]);
                     let tableHeaders = keys.map(k => `<th>${k}</th>`).join('');
-                    let tableRows = sqlData.map(row => {
+                    let tableRows = cypherData.map(row => {
                         return '<tr>' + keys.map(k => `<td>${row[k] !== null ? row[k] : ''}</td>`).join('') + '</tr>';
                     }).join('');
-                    dataEl.innerHTML = `<div class="sql-data-container"><table class="sql-data-table"><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
+                    dataEl.innerHTML = `<div class="cypher-data-container"><table class="cypher-data-table"><thead><tr>${tableHeaders}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
                 }
-                if (sqlQuery) {
-                    let typeLabel = sqlQuery.toUpperCase().includes('MATCH') ? 'Cypher' : 'SQL';
-                    sqlEl.innerHTML = `<div class="sql-debug">Executed ${typeLabel}:\n${sqlQuery}</div>`;
+                if (cypherQuery) {
+                    cypherEl.innerHTML = `<div class="cypher-debug">Executed Cypher:\n${cypherQuery}</div>`;
                 }
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }
@@ -331,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (parsed.data) {
                                 updateHighlight(parsed.data);
                             }
-                            msgObj.updateMetadata(parsed.sql_query, parsed.data);
+                            msgObj.updateMetadata(parsed.cypher_query, parsed.data);
                         } else if (parsed.type === 'chunk') {
                             streamedText += parsed.content;
                             msgObj.updateText(streamedText);
