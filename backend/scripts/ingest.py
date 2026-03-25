@@ -5,8 +5,9 @@ import kuzu
 from pathlib import Path
 
 # Paths
-DATASET_DIR = Path("dataset")
-DB_PATH = "context_graph_kuzu"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+DATASET_DIR = BASE_DIR / "data" / "dataset"
+DB_PATH = str(BASE_DIR / "data" / "context_graph_kuzu")
 
 def infer_kuzu_type(value):
     if isinstance(value, bool):

@@ -1,6 +1,8 @@
+import os
 import kuzu
 
-DB_PATH = "context_graph_kuzu"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, "data", "context_graph_kuzu")
 
 def get_graph_json():
     db = kuzu.Database(DB_PATH)

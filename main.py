@@ -9,9 +9,13 @@ from contextlib import asynccontextmanager
 from groq import Groq
 from dotenv import load_dotenv
 import kuzu
-import graph_builder
+from backend import graph_builder
 
 load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "data", "context_graph_kuzu")
+STATIC_DIR = os.path.join(BASE_DIR, "frontend")
 
 try:
     groq_client = Groq()
@@ -19,7 +23,6 @@ except Exception as e:
     print("Warning: GROQ_API_KEY not found or invalid.")
     groq_client = None
 
-DB_PATH = "context_graph_kuzu"
 kuzu_db = None
 SCHEMA_TEXT = ""
 
@@ -37,8 +40,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Context Graph System", lifespan=lifespan)
 
-os.makedirs("static", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+os.makedirs(STATIC_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 class ChatRequest(BaseModel):
     query: str
@@ -107,7 +110,7 @@ def extract_cypher(llm_response: str) -> str:
 
 @app.get("/")
 def read_root():
-    return FileResponse("static/index.html")
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 @app.get("/api/graph")
 def get_graph():
