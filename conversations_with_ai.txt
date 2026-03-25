@@ -504,3 +504,31 @@ Updating the presentation and instructions in the README to reflect standard dir
 Edited README.md
 
 I have successfully updated the `README.md` file! It now includes the professional directory structure mapping and the installation steps correctly reference `data/dataset` and `python backend/scripts/ingest.py`. Let me know if there's anything else you'd like to adjust.
+
+User Query - Implementation plan approved. Moving to execution phase to set up the testing infrastructure. Creating the `tests/` directory and `conftest.py` with shared fixtures.
+
+AI Response - Edited task.md
+Viewed requirements.txt:1-8
+Ran command: `mkdir -p /Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/tests && touch /Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/tests/__init__.py`
+Ran command: `pip install pytest httpx`
+Ran command: `source venv/bin/activate && pip install pytest httpx`
+
+Created `tests/` directory and initiated installation of `pytest` and `httpx`. Starting to write shared fixtures and initial tests.
+
+Edited conftest.py
+Edited test_backend.py
+Edited test_api.py
+
+Testing infrastructure (tests directory, conftest.py, and test files for backend and API) has been implemented with mocking for external dependencies. Proceeding to run the tests and verify correctness.
+
+Edited task.md
+Ran command: `source venv/bin/activate && export PYTHONPATH=$PYTHONPATH:. && pytest tests/`
+
+All 10 unit and functional tests passed successfully. The testing infrastructure is now robust, covering core Cypher extraction logic and FastAPI endpoints with appropriate mocking for external services. Creating a walkthrough to document the implementation and results.
+
+Created walkthrough.md
+Edited task.md
+
+I've successfully implemented a unit and functional testing suite for the application. All 10 tests passed! You can find the summary of the work in the walkthrough and task artifacts.
+
+
