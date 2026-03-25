@@ -494,3 +494,13 @@ Edited walkthrough.md
 [main.py](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/main.py:0:0-0:0) has been successfully moved back to the main directory. I updated the python configuration paths inside it so that it still serves the frontend and connects to the database perfectly from the root folder. 
 
 You can now start the application with its standard name `uvicorn main:app --reload` right from the project root!
+
+User Query - Update the README with the file structure.
+
+AI Response - Viewed README.md:1-69
+
+Updating the presentation and instructions in the README to reflect standard directory names.
+
+Edited README.md
+
+I have successfully updated the `README.md` file! It now includes the professional directory structure mapping and the installation steps correctly reference `data/dataset` and `python backend/scripts/ingest.py`. Let me know if there's anything else you'd like to adjust.

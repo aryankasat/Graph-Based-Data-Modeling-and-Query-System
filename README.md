@@ -22,7 +22,7 @@ This project is a context graph system that allows you to interactively explore 
 1. **Backend**: Built with **FastAPI** (`main.py`) to provide a lightweight, high-performance web server, streaming dual-channel UI payloads natively using `application/x-ndjson`.
 2. **Frontend**: A custom **Vanilla JS/HTML/CSS** application served directly by FastAPI. It has a split-screen design. The CSS implements modern glassmorphism and subtle glowing aesthetics for a visually premium experience without bloated UI frameworks.
 3. **Database Choice**: 
-   - We transitioned to **Kùzu**, an embedded, high-performance open-source native property graph database (`context_graph_kuzu`). Kùzu was selected because evaluating ERP multi-hop supply chain relations (e.g., tracking a Customer's Order to a specific Plant Delivery) is extremely complex and computationally expensive to traverse using repetitive SQL `JOIN` constraints.
+   - We transitioned to **Kùzu**, an embedded, high-performance open-source native property graph database (`data/context_graph_kuzu`). Kùzu was selected because evaluating ERP multi-hop supply chain relations (e.g., tracking a Customer's Order to a specific Plant Delivery) is extremely complex and computationally expensive to traverse using repetitive SQL `JOIN` constraints.
    - Utilizing a native Graph layer unlocks lightning-fast topology execution (`MATCH (c:Customer)-[:PLACED]->(s:SalesOrder)-[:FULFILLS]->...`) and fundamentally simplifies logical AI query construction parameters.
 4. **LLM Prompting Strategy**: 
    - **Text-to-Cypher Generation**: The primary prompt passes the complete Kùzu Node and Relationship catalog directly into the system context. It explicitly bounds the LLM to write logically sound, optimized **OpenCypher** traversal scripts.
@@ -31,6 +31,30 @@ This project is a context graph system that allows you to interactively explore 
    - The System Prompts inject a strict programmatic rule enforcing domain boundaries.
    - If a prompt asks for general knowledge, creative writing, or external topics, the LLM is forcibly instructed to halt Cypher logic and reply with the exact phrase: *"This system is designed to answer questions related to the provided dataset only."*
    - The FastAPI backend checks for this specific sequence and short-circuits execution if caught, preventing database strain and guaranteeing query grounding.
+
+## Project Structure
+
+```text
+Graph-Based-Data-Modeling-and-Query-System/
+├── main.py
+├── backend/
+│   ├── __init__.py
+│   ├── graph_builder.py
+│   └── scripts/
+│       └── ingest.py
+├── data/
+│   ├── dataset/
+│   └── context_graph_kuzu/
+├── frontend/
+│   ├── css/
+│   │   └── styles.css
+│   ├── js/
+│   │   └── script.js
+│   └── index.html
+├── assets/
+├── requirements.txt
+└── README.md
+```
 
 ## Setup & Running Locally
 
@@ -44,10 +68,10 @@ This project is a context graph system that allows you to interactively explore 
    ```bash
    pip install -r requirements.txt
    ```
-2. Place the dataset inside the `/dataset` directory.
-3. Run the Data Ingestion script (this will compile the `context_graph_kuzu` graph database):
+2. Place the dataset inside the `data/dataset` directory.
+3. Run the Data Ingestion script (this will compile the `data/context_graph_kuzu` graph database):
    ```bash
-   python ingest.py
+   python backend/scripts/ingest.py
    ```
 4. Set your Groq API key:
    ```bash
