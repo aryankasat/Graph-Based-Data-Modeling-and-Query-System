@@ -51,6 +51,10 @@ Graph-Based-Data-Modeling-and-Query-System/
 │   ├── js/
 │   │   └── script.js
 │   └── index.html
+├── tests/
+│   ├── conftest.py
+│   ├── test_api.py
+│   └── test_backend.py
 ├── assets/
 ├── requirements.txt
 └── README.md
@@ -67,6 +71,7 @@ Graph-Based-Data-Modeling-and-Query-System/
 1. Install requirements:
    ```bash
    pip install -r requirements.txt
+   pip install pytest httpx
    ```
 2. Place the dataset inside the `data/dataset` directory.
 3. Run the Data Ingestion script (this will compile the `data/context_graph_kuzu` graph database):
@@ -84,6 +89,13 @@ Graph-Based-Data-Modeling-and-Query-System/
    ```
    Or explicitly via `python main.py`
 6. Open your browser and navigate to: `http://localhost:8000`
+
+### Running Tests
+
+To run the unit and functional tests, use the following command from the root directory:
+```bash
+pytest tests/
+```
 
 ## Example Queries to Try
 

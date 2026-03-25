@@ -531,4 +531,18 @@ Edited task.md
 
 I've successfully implemented a unit and functional testing suite for the application. All 10 tests passed! You can find the summary of the work in the walkthrough and task artifacts.
 
+User Query -Update the project structure in README.md
+
+AI Response - Viewed README.md:1-93
+Edited README.md
+
+I have updated the [README.md](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/README.md:0:0-0:0) file to reflect the new project structure, including the `tests/` directory. I also added a "Running Tests" section with instructions on how to execute the unit and functional tests using `pytest`.
+
+### Summary of Changes:
+- **Project Structure**: Added `tests/` and its contents ([conftest.py](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/tests/conftest.py:0:0-0:0), [test_api.py](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/tests/test_api.py:0:0-0:0), [test_backend.py](cci:7://file:///Users/aryankasat/Documents/Aryan/Codes/Graph-Based-Data-Modeling-and-Query-System/tests/test_backend.py:0:0-0:0)) to the directory tree.
+- **Installation**: Added `pip install pytest httpx` to the installation steps to ensure the testing dependencies are available.
+- **Running Tests**: Added a new section explaining how to run the test suite using `pytest tests/`.
+
+The application is now better documented for future testing and development! Let me know if you need anything else.
+
 
