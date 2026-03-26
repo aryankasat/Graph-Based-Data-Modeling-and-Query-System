@@ -209,4 +209,9 @@ Using this data, provide a clear, natural language answer to the user's question
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Use environment variables for host and port for cloud deployment flexibility
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+    
+    print(f"Starting server on {host}:{port}")
+    uvicorn.run("main:app", host=host, port=port, reload=os.getenv("DEBUG", "False").lower() == "true")
