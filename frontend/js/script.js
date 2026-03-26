@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         let senderHTML = isUser ? 
             `<div class="message-sender"><strong>You</strong></div>` :
-            `<div class="message-sender"><strong>Dodge AI</strong><br><span>Graph Agent</span></div>`;
+            `<div class="message-sender"><strong>AI chatbot</strong><br><span>Graph Agent</span></div>`;
 
         let contentClass = isUser ? 'user-message' : (type === 'error' ? 'error-message' : 'system-message');
         
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapper.className = `message-wrapper system`;
         
         let avatarHTML = `<div class="avatar-container"><div class="system-avatar">D</div></div>`;
-        let senderHTML = `<div class="message-sender"><strong>Dodge AI</strong><br><span>Graph Agent</span></div>`;
+        let senderHTML = `<div class="message-sender"><strong>AI chatbot</strong><br><span>Graph Agent</span></div>`;
 
         wrapper.innerHTML = `
             ${avatarHTML}
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update status to loading
         statusDot.classList.add('loading');
-        statusText.textContent = 'Dodge AI is thinking...';
+        statusText.textContent = 'AI chatbot is thinking...';
 
         try {
             const response = await fetch('/api/chat', {
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             // Restore status
             statusDot.classList.remove('loading');
-            statusText.textContent = 'Dodge AI is awaiting instructions';
+            statusText.textContent = 'AI chatbot is awaiting instructions';
         }
     }
 
